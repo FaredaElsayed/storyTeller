@@ -1,23 +1,113 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import { FaSun, FaMoon } from "react-icons/fa";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import "./index.css";
 
 function App() {
+  const [prompt, setPrompt] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [Error, setError] = useState("");
+  const {
+    mutate: fetchStory,
+    status,
+    isError,
+    data: story,
+    error,
+  } = useMutation({
+    mutationFn: async (prompt) => {
+      const response = await axios.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          model: "mistralai/mistral-7b-instruct",
+          messages: [{ role: "user", content: prompt }],
+        },
+        {
+          headers: {
+            Authorization: `Bearer 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`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Response received:", response.data);
+      return response.data.choices[0].message.content;
+    },
+    onMutate: () => {
+      setIsLoading(true);
+    },
+    onSuccess: () => {
+      setIsLoading(false);
+    },
+    onSettled: () => {
+      setIsLoading(false);
+    },
+  });
+
+  const toggleDarkMode = () => {
+    setDarkMode((prevMode) => !prevMode);
+  };
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  const handleGenerateStory = () => {
+    if (!prompt.trim()) {
+      setError("Please tell me what story you want me to tell 😊.");
+    } else {
+      setError("");
+      fetchStory(prompt); 
+    }
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className={`story-container ${darkMode ? "dark" : ""}`}>
+      <h1>AI Storyteller</h1>
+      <input
+        type="text"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Enter your story prompt..."
+      />
+      <button
+        onClick={handleGenerateStory}
+        disabled={isLoading}
+        style={{ cursor: isLoading ? "not-allowed" : "pointer" }}
+      >
+        {isLoading ? "Generating..." : "Generate Story"}
+      </button>
+      {Error && <p className={darkMode ? "dark" : ""}>{Error}</p>}
+
+      <button
+        onClick={toggleDarkMode}
+        className="theme-toggle"
+        style={{
+          backgroundColor: "transparent",
+          border: "none",
+          position: "absolute",
+          right: "2rem",
+          top: "2rem",
+        }}
+      >
+        {darkMode ? <FaSun /> : <FaMoon />}
+      </button>
+
+      {isLoading && <p className="loading">Loading...</p>}
+      {isError && (
+        <p className="loading">Failed to generate a story. Please try again.</p>
+      )}
+
+      {!Error && story && (
+        <div className="story-output">
+          <h2>Story:</h2>
+          <p>{story}</p>
+        </div>
+      )}
     </div>
   );
 }
