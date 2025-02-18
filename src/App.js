@@ -11,10 +11,8 @@ function App() {
   const [Error, setError] = useState("");
   const {
     mutate: fetchStory,
-    status,
     isError,
     data: story,
-    error,
   } = useMutation({
     mutationFn: async (prompt) => {
       const response = await axios.post(
