@@ -33,6 +33,7 @@ function App() {
     },
     onMutate: () => {
       setIsLoading(true);
+      setError("");
     },
     onSuccess: () => {
       setIsLoading(false);
@@ -54,12 +55,18 @@ function App() {
     }
   }, [darkMode]);
 
+  useEffect(() => {
+    if (isError) {
+      setError("");
+    }
+  }, [isError]);
+
   const handleGenerateStory = () => {
     if (!prompt.trim()) {
       setError("Please tell me what story you want me to tell 😊.");
     } else {
       setError("");
-      fetchStory(prompt); 
+      fetchStory(prompt);
     }
   };
 
@@ -96,10 +103,9 @@ function App() {
       </button>
 
       {isLoading && <p className="loading">Loading...</p>}
-      {isError && (
+      {isError && !Error && (
         <p className="loading">Failed to generate a story. Please try again.</p>
       )}
-
       {!Error && story && (
         <div className="story-output">
           <h2>Story:</h2>
