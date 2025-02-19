@@ -127,7 +127,7 @@ p {
   line-height: 1.6;
   text-align: left;
 }
-ul{
+ul {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -159,11 +159,13 @@ p.dark {
   padding: 0;
   margin: 0;
 }
-.prompt-suggestions ol li {
+.prompt-suggestions ol li,
+.prompt-suggestions ul li {
   padding: 0;
   margin: 0;
 }
-.prompt-suggestions ol li p {
+.prompt-suggestions ol li p,
+.prompt-suggestions ul li p {
   padding: 0;
   margin: 0;
 }
