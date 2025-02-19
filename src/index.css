@@ -127,7 +127,11 @@ p {
   line-height: 1.6;
   text-align: left;
 }
-
+ul{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
 p.dark {
   color: #f0f0f0 !important;
 }
@@ -139,7 +143,10 @@ p.dark {
   justify-content: flex-start;
 }
 
+.prompt-suggestions ol,
 .prompt-suggestions ul {
+  margin: 0px;
+  padding: 0px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -148,7 +155,15 @@ p.dark {
   gap: 0.5rem;
 }
 
-.prompt-suggestions ul li p {
+.prompt-suggestions ul {
+  padding: 0;
+  margin: 0;
+}
+.prompt-suggestions ol li {
+  padding: 0;
+  margin: 0;
+}
+.prompt-suggestions ol li p {
   padding: 0;
   margin: 0;
 }

@@ -43,6 +43,7 @@ function App() {
       fetchPromptSuggestions();
     } catch (err) {
       setError("Failed to generate a story. Please try again.");
+      setStory("");
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +133,13 @@ function App() {
         {isLoading ? "Generating..." : "Generate Story"}
       </button>
       {Error && (
-        <p className={darkMode ? "dark" : ""} style={{ color: textColor }}>
+        <p
+          className={darkMode ? "dark" : ""}
+          style={{
+            color: story !== "" ? textColor : "#6a5acd",
+            fontWeight: "bold",
+          }}
+        >
           {Error}
         </p>
       )}
@@ -153,7 +160,7 @@ function App() {
       </button>
 
       {isLoading && (
-        <p className="loading" style={{ color: textColor }}>
+        <p className="loading" style={{ color: story ? textColor : "" }}>
           Loading...
         </p>
       )}
