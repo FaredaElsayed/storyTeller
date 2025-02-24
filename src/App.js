@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaSun, FaMoon } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
 import "./index.css";
+import Markdown from "react-markdown";
 
 function App() {
   const [prompt, setPrompt] = useState("");
@@ -12,23 +13,35 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [themeColor, setThemeColor] = useState();
   const [textColor, setTextColor] = useState();
-  const [suggestedPrompts, setSuggestedPrompts] = useState([
-    "Clever dog",
-    "The last human",
-    "The haunted house",
-  ]);
+  const [suggestedPrompts, setSuggestedPrompts] = useState([]);
 
   const GEMINI_API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
   const GEMINI_API_KEY = "AIzaSyBZi96EAEsdctf3UUi6VAdfLyhuKoc0_fA";
+  useEffect(() => {
+    fetchPromptSuggestions();
+  }, []);
+  const [storyProgress, setStoryProgress] = useState("");
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [intervalRef]);
 
   const fetchStory = async () => {
     if (!prompt.trim()) {
       setError("Please tell me what story you want me to tell 😊.");
       return;
     }
+
     setIsLoading(true);
     setError("");
+    setStory("");
+    setStoryProgress("");
 
     try {
       const response = await axios.post(
@@ -37,9 +50,24 @@ function App() {
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         }
       );
-      const generatedStory = response.data.candidates[0].content.parts[0].text;
-      setStory(generatedStory);
-      extractThemeAndTextColor(generatedStory);
+
+      const fullStory = response.data.candidates[0].content.parts[0].text;
+      let currentText = "";
+      let index = 0;
+
+      intervalRef.current = setInterval(() => {
+        if (index < fullStory.length) {
+          currentText += fullStory[index];
+          setStoryProgress(currentText + " █");
+          index++;
+        } else {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          setStory(currentText.replace("█", ""));
+        }
+      }, 20);
+
+      extractThemeAndTextColor(fullStory);
       fetchPromptSuggestions();
     } catch (err) {
       setError("Failed to generate a story. Please try again.");
@@ -48,6 +76,14 @@ function App() {
       setIsLoading(false);
     }
   };
+  const handleFetchStory = () => {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    setStoryProgress("");
+    setStory("");
+    fetchStory();
+  };
+
   const extractThemeAndTextColor = async (storyText) => {
     try {
       const response = await axios.post(
@@ -118,15 +154,18 @@ function App() {
       className={`story-container ${darkMode ? "dark" : ""}`}
       style={{ backgroundColor: themeColor }}
     >
-      <h1 style={{ color: textColor }}>AI Storyteller</h1>
+      <h1 style={{ color: textColor }}>Storyteller</h1>
       <input
         type="text"
         value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
+        onChange={(e) =>
+          setPrompt(e.target.value.replace(/\*\*/g, "").replace(/\d/g, ""))
+        }
         placeholder="Enter your story prompt..."
       />
+
       <button
-        onClick={fetchStory}
+        onClick={handleFetchStory}
         disabled={isLoading}
         style={{ cursor: isLoading ? "not-allowed" : "pointer" }}
       >
@@ -158,36 +197,42 @@ function App() {
       >
         {darkMode ? <FaSun /> : <FaMoon />}
       </button>
-
       {isLoading && (
-        <p className="loading" style={{ color: story ? textColor : "" }}>
-          Loading...
-        </p>
-      )}
-      {story && (
+  <div className="loading-overlay">
+    <div className="spinner"></div>
+  </div>
+)}
+
+      {storyProgress && (
         <div className="story-output">
-          <h2 style={{ color: themeColor }}> Story:</h2>
-          <ReactMarkdown>{story}</ReactMarkdown>
+          <h2> Story:</h2>
+          <ReactMarkdown>{storyProgress.replace("█", "")}</ReactMarkdown>
         </div>
       )}
-      <div className="prompt-suggestions">
-        <h3 style={{ color: textColor }}>Try these stories:</h3>
-        <ul>
-          {suggestedPrompts.map((sug, index) => (
-            <li
-              key={index}
-              onClick={() => setPrompt(sug)}
-              style={{
-                cursor: "pointer",
-                listStyleType: "none",
-                color: textColor,
-              }}
-            >
-              <ReactMarkdown>{sug}</ReactMarkdown>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {suggestedPrompts.length > 0 && (
+        <div className="prompt-suggestions">
+          <h3 style={{ color: textColor, alignSelf: "center" }}>
+            Try these stories:
+          </h3>
+          <ul>
+            {suggestedPrompts.map((sug, index) => (
+              <li
+                key={index}
+                onClick={() => {
+                  setPrompt(sug.replace(/\*\*/g, "").replace(/\d/g, ""));
+                }}
+                style={{
+                  cursor: "pointer",
+                  listStyleType: "none",
+                  color: textColor,
+                }}
+              >
+                <ReactMarkdown>{sug}</ReactMarkdown>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
